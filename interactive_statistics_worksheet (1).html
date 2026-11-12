@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Statistics & Research Methods Worksheet</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-blue-100 selection:text-blue-900 pb-20">
+
+    <!-- Top Navigation / Sticky Score Bar -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Statistics & Research Methods</h1>
+                <p id="progress-label" class="text-xs text-slate-500 font-medium">Question 1 of 9</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div id="score-badge" class="px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 font-semibold text-sm">
+                    Score: <span id="score-value">0</span> / <span id="total-value">0</span>
+                </div>
+                <button onclick="resetWorksheet()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-xl transition cursor-pointer">
+                    Restart
+                </button>
+            </div>
+        </div>
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-200 h-1.5">
+            <div id="progress-bar" class="bg-blue-600 h-1.5 transition-all duration-300" style="width: 11%"></div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6" id="worksheet-container">
+        
+        <!-- Compact Instruction Banner -->
+        <div id="instruction-banner" class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-4 sm:p-5 text-white shadow-sm">
+            <p class="text-blue-50 text-xs sm:text-sm leading-relaxed">
+                <strong>How it works:</strong> Complete the current question and click <strong>Submit Question</strong> to check your answers and view explanations for any mistakes. Once submitted, you can advance to the next question.
+            </p>
+        </div>
+
+        <!-- Active Question Section Container -->
+        <div id="sections-wrapper"></div>
+
+        <!-- Step Navigation & Submission Controls -->
+        <div id="step-controls" class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div id="step-status-text" class="text-sm text-slate-600 font-medium">
+                Answer all items above, then submit to check your work.
+            </div>
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                <button id="submit-step-btn" onclick="submitCurrentStep()" class="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold rounded-xl shadow-sm transition cursor-pointer">
+                    Submit Question
+                </button>
+                <button id="next-step-btn" onclick="goToNextStep()" class="hidden w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold rounded-xl shadow-sm transition cursor-pointer">
+                    Next Question &rarr;
+                </button>
+            </div>
+        </div>
+
+        <!-- Final Score Summary Page (Hidden until all questions are completed) -->
+        <div id="final-summary-page" class="hidden bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden">
+            <div class="bg-gradient-to-r from-indigo-900 to-blue-900 text-white p-6 sm:p-8 text-center">
+                <span class="inline-block px-3 py-1 rounded-full bg-white/10 text-blue-200 text-xs font-bold uppercase tracking-wider mb-2">Worksheet Complete</span>
+                <h2 class="text-2xl sm:text-3xl font-bold">Final Score Summary</h2>
+                <div class="mt-5 inline-flex flex-col items-center justify-center bg-white/10 backdrop-blur rounded-2xl px-8 py-5 border border-white/20">
+                    <div class="text-4xl sm:text-5xl font-extrabold tracking-tight" id="final-score-fraction">0 / 0</div>
+                    <div class="text-lg font-semibold text-blue-200 mt-1" id="final-score-percent">0%</div>
+                </div>
+                <p id="final-performance-msg" class="mt-4 text-sm sm:text-base text-blue-100 max-w-xl mx-auto"></p>
+            </div>
+            <div class="p-6 sm:p-8 space-y-6">
+                <h3 class="text-lg font-bold text-slate-900 border-b border-slate-200 pb-2">Breakdown by Question</h3>
+                <div id="final-breakdown-list" class="space-y-3"></div>
+                <div class="pt-4 flex justify-center">
+                    <button onclick="resetWorksheet()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-sm transition cursor-pointer">
+                        Practice Again (Restart Worksheet)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Custom Modal Notification (Replaces alert()) -->
+    <div id="feedback-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100 transform transition-all">
+            <div class="flex items-center justify-between mb-3">
+                <h3 id="modal-title" class="text-xl font-bold text-slate-900">Worksheet Graded!</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">&times;</button>
+            </div>
+            <p id="modal-body" class="text-slate-600 text-sm sm:text-base mb-5 leading-relaxed"></p>
+            <div class="flex justify-end">
+                <button onclick="closeModal()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition cursor-pointer">
+                    Review Answers
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Worksheet Data Structure
+         * Covers Question 1, Question 2, Question 3, Question 4, Question 5, Question 7, and Synthesis Questions 8, 9, 10.
+         * (Note: Follows exact question numbering requested by the user).
+         */
+        const worksheetData = [
+            {
+                id: "q1",
+                number: "Question 1",
+                title: "Fundamental Statistical Concepts (10 Scenarios)",
+                instruction: "Select the correct term from the dropdown menu for each scenario.",
+                type: "dropdown",
+                options: ["Population", "Sample", "Parameter", "Statistic", "Census"],
+                items: [
+                    {
+                        id: "q1_1",
+                        text: "All 42,000 students currently enrolled at the National University.",
+                        answer: "Population",
+                        explanation: "The entire group of individuals being studied is the population."
+                    },
+                    {
+                        id: "q1_2",
+                        text: "A subset of 500 students randomly chosen from the university directory to take a dining hall survey.",
+                        answer: "Sample",
+                        explanation: "A smaller, manageable subset selected from the larger population is a sample."
+                    },
+                    {
+                        id: "q1_3",
+                        text: "The true average GPA of all 42,000 university students is 3.24.",
+                        answer: "Parameter",
+                        explanation: "A numerical summary describing an entire population is a parameter."
+                    },
+                    {
+                        id: "q1_4",
+                        text: "Among the 500 surveyed students, 68% reported that they study at the main library.",
+                        answer: "Statistic",
+                        explanation: "A numerical summary calculated from a sample is a statistic."
+                    },
+                    {
+                        id: "q1_5",
+                        text: "The government conducts a mandatory count every 10 years collecting household data from every single resident in the country.",
+                        answer: "Census",
+                        explanation: "Collecting data from every single member of a population is a census."
+                    },
+                    {
+                        id: "q1_6",
+                        text: "Every single smartphone produced on Assembly Line B during the month of October.",
+                        answer: "Population",
+                        explanation: "All items of interest in the production run make up the population."
+                    },
+                    {
+                        id: "q1_7",
+                        text: "120 smartphones pulled off Assembly Line B for battery stress testing.",
+                        answer: "Sample",
+                        explanation: "The 120 inspected phones represent a sample taken from all phones produced."
+                    },
+                    {
+                        id: "q1_8",
+                        text: "Quality control inspects every single parachute packed in a factory before shipment.",
+                        answer: "Census",
+                        explanation: "Inspecting 100% of the items in a group is a census."
+                    },
+                    {
+                        id: "q1_9",
+                        text: "The average battery life of the 120 tested smartphones was found to be 14.2 hours.",
+                        answer: "Statistic",
+                        explanation: "14.2 hours summarizes a measurement taken from the sample of 120 phones."
+                    },
+                    {
+                        id: "q1_10",
+                        text: "According to official league records, the exact mean height of all players in NBA history is 6'7\".",
+                        answer: "Parameter",
+                        explanation: "This value describes the entire population of all NBA players in history."
+                    },
+                    {
+                        id: "q1_11",
+                        text: "Every single tree inside Yellowstone National Park.",
+                        answer: "Population",
+                        explanation: "All trees within the defined area make up the complete population of interest."
+                    },
+                    {
+                        id: "q1_12",
+                        text: "A botanist tags and measures 350 pine trees across 12 zones of Yellowstone National Park.",
+                        answer: "Sample",
+                        explanation: "The 350 measured trees form a subset drawn from the entire park population."
+                    },
+                    {
+                        id: "q1_13",
+                        text: "A small boutique hotel emails a satisfaction survey to every single guest who stayed during 2026.",
+                        answer: "Census",
+                        explanation: "Attempting to collect data from 100% of the target group is a census."
+                    },
+                    {
+                        id: "q1_14",
+                        text: "The median household income of the 1,500 families interviewed in a regional economic survey.",
+                        answer: "Statistic",
+                        explanation: "Because it is computed from the 1,500 surveyed families (a sample), it is a statistic."
+                    },
+                    {
+                        id: "q1_15",
+                        text: "The exact percentage of all seats in a 60,000-seat stadium that were sold for the championship match.",
+                        answer: "Parameter",
+                        explanation: "This number summarizes the entire population of all 60,000 seats."
+                    }
+                ]
+            },
+            {
+                id: "q2",
+                number: "Question 2",
+                title: "Descriptive vs. Inferential Statistics (5 Scenarios)",
+                instruction: "Click whether each statement represents Descriptive Statistics or Inferential Statistics.",
+                type: "button-choice",
+                options: ["Descriptive Statistics", "Inferential Statistics"],
+                items: [
+                    {
+                        id: "q2_1",
+                        text: "A teacher calculates the class average on the midterm exam as 78.5% and creates a bar chart of the grade distribution.",
+                        answer: "Descriptive Statistics",
+                        explanation: "Summarizing and organizing data from a specific group without generalizing beyond it is descriptive."
+                    },
+                    {
+                        id: "q2_2",
+                        text: "Based on a poll of 1,200 likely voters, a news network predicts that Candidate A will win the upcoming national election with 53% of the vote.",
+                        answer: "Inferential Statistics",
+                        explanation: "Using sample data to make predictions or generalizations about a larger population is inferential."
+                    },
+                    {
+                        id: "q2_3",
+                        text: "A clinical trial finds that patients taking a new medication recovered 2 days faster on average, concluding the drug is effective for the general public.",
+                        answer: "Inferential Statistics",
+                        explanation: "Drawing a broader conclusion about the general population from a clinical trial sample is inferential."
+                    },
+                    {
+                        id: "q2_4",
+                        text: "An HR manager reports that the company currently employs 240 women and 210 men, with a median tenure of 4.2 years.",
+                        answer: "Descriptive Statistics",
+                        explanation: "Directly reporting exact counts and medians of existing company records describes the dataset."
+                    },
+                    {
+                        id: "q2_5",
+                        text: "Economists analyze historical housing data from 2010–2025 to forecast a 4.5% rise in home prices next year.",
+                        answer: "Inferential Statistics",
+                        explanation: "Forecasting future trends beyond the observed dataset relies on inferential modeling."
+                    },
+                    {
+                        id: "q2_6",
+                        text: "A coffee chain compiles a table showing the exact number of lattes sold at each of its 15 stores last weekend.",
+                        answer: "Descriptive Statistics",
+                        explanation: "Organizing and presenting exact sales figures from existing records is descriptive."
+                    },
+                    {
+                        id: "q2_7",
+                        text: "After testing 80 soil samples from a valley, agronomists estimate with 95% confidence that the entire region's soil pH averages 6.4.",
+                        answer: "Inferential Statistics",
+                        explanation: "Using confidence intervals from a sample to estimate a population parameter is inferential."
+                    },
+                    {
+                        id: "q2_8",
+                        text: "A sports analyst lists the top 10 goal scorers in the Premier League this season along with their exact shot percentages.",
+                        answer: "Descriptive Statistics",
+                        explanation: "Listing and summarizing recorded seasonal statistics without making predictions is descriptive."
+                    }
+                ]
+            },
+            {
+                id: "q3",
+                number: "Question 3",
+                title: "Types of Variables (5 Scenarios)",
+                instruction: "Select the correct variable classification from the dropdown menu for each scenario.",
+                type: "dropdown",
+                options: ["Continuous & Quantitative", "Discrete & Quantitative", "Qualitative Variable"],
+                items: [
+                    {
+                        id: "q3_1",
+                        text: "The exact time (in seconds) it takes an athlete to complete a 400-meter sprint.",
+                        answer: "Continuous & Quantitative",
+                        explanation: "Time is measured and can take any fractional value within an interval (continuous quantitative)."
+                    },
+                    {
+                        id: "q3_2",
+                        text: "The number of customer service calls received by a help desk in one hour.",
+                        answer: "Discrete & Quantitative",
+                        explanation: "Calls are counted in whole integers (0, 1, 2...); you cannot receive 2.4 calls."
+                    },
+                    {
+                        id: "q3_3",
+                        text: "The brand of smartphone owned by each student in a lecture hall (e.g., Apple, Samsung, Google).",
+                        answer: "Qualitative Variable",
+                        explanation: "Smartphone brands are non-numerical categories/attributes."
+                    },
+                    {
+                        id: "q3_4",
+                        text: "The volume of rainfall (in millimeters) recorded in Singapore during November.",
+                        answer: "Continuous & Quantitative",
+                        explanation: "Rainfall volume is a physical measurement that can take infinitely precise decimal values."
+                    },
+                    {
+                        id: "q3_5",
+                        text: "The total number of defective lightbulbs found inside a shipping crate.",
+                        answer: "Discrete & Quantitative",
+                        explanation: "Defective items are countable whole numbers."
+                    },
+                    {
+                        id: "q3_6",
+                        text: "The primary mode of transport a commuter uses to get to work (Bus, MRT, Car, Bicycle).",
+                        answer: "Qualitative Variable",
+                        explanation: "Transport modes are descriptive labels rather than numerical counts or measurements."
+                    },
+                    {
+                        id: "q3_7",
+                        text: "The exact body weight (in kilograms) of newborn babies at a maternity clinic.",
+                        answer: "Continuous & Quantitative",
+                        explanation: "Weight is measured on a continuous scale and can include any decimal precision."
+                    },
+                    {
+                        id: "q3_8",
+                        text: "The number of passengers boarding an Airbus A350 flight.",
+                        answer: "Discrete & Quantitative",
+                        explanation: "Passengers are counted in whole numbers."
+                    }
+                ]
+            },
+            {
+                id: "q4",
+                number: "Question 4",
+                title: "Levels of Measurement (10 Scenarios)",
+                instruction: "Select the highest valid level of measurement from the dropdown menu: Nominal, Ordinal, Interval, or Ratio.",
+                type: "dropdown",
+                options: ["Nominal", "Ordinal", "Interval", "Ratio"],
+                items: [
+                    {
+                        id: "q4_1",
+                        text: "Blood types of hospital patients (Type A, Type B, Type AB, Type O).",
+                        answer: "Nominal",
+                        explanation: "Blood types are categories with no inherent order or ranking."
+                    },
+                    {
+                        id: "q4_2",
+                        text: "Customer satisfaction ratings: 'Very Dissatisfied', 'Dissatisfied', 'Neutral', 'Satisfied', 'Very Satisfied'.",
+                        answer: "Ordinal",
+                        explanation: "Categories have a clear rank order, but differences between levels are not mathematically equal."
+                    },
+                    {
+                        id: "q4_3",
+                        text: "Daily high temperatures measured in degrees Celsius (°C).",
+                        answer: "Interval",
+                        explanation: "Celsius has equal intervals between degrees, but 0°C is an arbitrary freezing point (not an absence of heat)."
+                    },
+                    {
+                        id: "q4_4",
+                        text: "Annual gross income measured in US dollars ($).",
+                        answer: "Ratio",
+                        explanation: "$0 represents a true absence of income, and $80,000 is meaningfully twice as much as $40,000."
+                    },
+                    {
+                        id: "q4_5",
+                        text: "Finishing positions in a marathon (1st place, 2nd place, 3rd place).",
+                        answer: "Ordinal",
+                        explanation: "Finishing positions rank runners, but the time gap between 1st and 2nd may differ from 2nd and 3rd."
+                    },
+                    {
+                        id: "q4_6",
+                        text: "Calendar years in which historical events occurred (e.g., 1969, 1989, 2001, 2020).",
+                        answer: "Interval",
+                        explanation: "Intervals between years are equal, but Year 0 is an arbitrary calendar starting point."
+                    },
+                    {
+                        id: "q4_7",
+                        text: "Weight of luggage bags checked at an airport in kilograms (kg).",
+                        answer: "Ratio",
+                        explanation: "0 kg means no weight at all, and 20 kg is twice as heavy as 10 kg."
+                    },
+                    {
+                        id: "q4_8",
+                        text: "Jersey numbers worn by players on a football team (e.g., #7, #10, #23).",
+                        answer: "Nominal",
+                        explanation: "Jersey numbers serve purely as identification labels; doing math on them is meaningless."
+                    },
+                    {
+                        id: "q4_9",
+                        text: "Standardized IQ test scores (where average is set to 100 and there is no true zero intelligence).",
+                        answer: "Interval",
+                        explanation: "IQ scores have standardized equal intervals but lack a true zero point."
+                    },
+                    {
+                        id: "q4_10",
+                        text: "Number of minutes a commuter spends waiting for a train.",
+                        answer: "Ratio",
+                        explanation: "0 minutes means zero waiting time, and 30 minutes is twice as long as 15 minutes."
+                    },
+                    {
+                        id: "q4_11",
+                        text: "Military ranks (Private, Corporal, Sergeant, Lieutenant, Captain).",
+                        answer: "Ordinal",
+                        explanation: "Military ranks follow a strict hierarchy, though intervals between ranks are not numerical quantities."
+                    },
+                    {
+                        id: "q4_12",
+                        text: "Distance driven by a delivery van in kilometers per day.",
+                        answer: "Ratio",
+                        explanation: "0 km indicates no distance traveled, and 120 km is twice as far as 60 km."
+                    },
+                    {
+                        id: "q4_13",
+                        text: "Postal codes / ZIP codes of residential neighborhoods.",
+                        answer: "Nominal",
+                        explanation: "Postal codes classify geographic areas without any meaningful ranking or arithmetic value."
+                    },
+                    {
+                        id: "q4_14",
+                        text: "Ambient temperatures measured in degrees Fahrenheit (°F).",
+                        answer: "Interval",
+                        explanation: "Fahrenheit has equal degree intervals, but 0°F does not represent total absence of thermal energy."
+                    }
+                ]
+            },
+            {
+                id: "q5",
+                number: "Question 5",
+                title: "Sampling Methods (10 Scenarios)",
+                instruction: "Select the sampling technique used in each scenario from the dropdown menu.",
+                type: "dropdown",
+                options: [
+                    "Convenience Sampling",
+                    "Judgemental Sampling",
+                    "Simple Random Sampling",
+                    "Systematic Sampling",
+                    "Stratified Sampling",
+                    "Cluster Sampling"
+                ],
+                items: [
+                    {
+                        id: "q5_1",
+                        text: "Every student is assigned a unique ID number, and a computer random number generator selects 100 IDs.",
+                        answer: "Simple Random Sampling",
+                        explanation: "Every individual and every possible sample of size 100 has an equal chance of selection."
+                    },
+                    {
+                        id: "q5_2",
+                        text: "A quality inspector checks every 15th bottle coming off a beverage bottling conveyor belt.",
+                        answer: "Systematic Sampling",
+                        explanation: "Selecting every k-th element from an ordered sequence is systematic sampling."
+                    },
+                    {
+                        id: "q5_3",
+                        text: "A researcher stands outside a coffee shop and interviews the first 30 people who walk past.",
+                        answer: "Convenience Sampling",
+                        explanation: "Selecting participants who are easiest to reach is convenience sampling."
+                    },
+                    {
+                        id: "q5_4",
+                        text: "A university divides students by class year (Freshman, Sophomore, Junior, Senior) and randomly selects 50 students from each group.",
+                        answer: "Stratified Sampling",
+                        explanation: "Dividing into homogeneous strata and sampling proportionally/randomly from every stratum is stratified sampling."
+                    },
+                    {
+                        id: "q5_5",
+                        text: "A school district randomly selects 4 high schools out of 25 and surveys every single teacher at those 4 selected schools.",
+                        answer: "Cluster Sampling",
+                        explanation: "Randomly selecting entire intact groups (clusters) and surveying all members within them is cluster sampling."
+                    },
+                    {
+                        id: "q5_6",
+                        text: "An experienced medical researcher hand-picks 12 specific patients with rare symptoms whom she believes best represent a clinical condition.",
+                        answer: "Judgemental Sampling",
+                        explanation: "When a researcher uses expert discretion/purposive judgment to select specific subjects, it is judgemental sampling."
+                    },
+                    {
+                        id: "q5_7",
+                        text: "All 5,000 raffle tickets are mixed thoroughly in a rotating drum, and 3 winning tickets are drawn blindfolded.",
+                        answer: "Simple Random Sampling",
+                        explanation: "Drawing from a thoroughly mixed pool gives every ticket an identical probability."
+                    },
+                    {
+                        id: "q5_8",
+                        text: "An airline randomly chooses 6 flights departing today and interviews every passenger aboard those 6 flights.",
+                        answer: "Cluster Sampling",
+                        explanation: "Each flight acts as a natural cluster; all passengers inside the randomly chosen flights are surveyed."
+                    },
+                    {
+                        id: "q5_9",
+                        text: "An HR team groups employees by salary bracket (Entry, Mid, Executive) and randomly selects 10% from each bracket.",
+                        answer: "Stratified Sampling",
+                        explanation: "Employees are grouped into strata by income level, and a random sample is drawn from each stratum."
+                    },
+                    {
+                        id: "q5_10",
+                        text: "Using an alphabetical list of registered voters, a pollster picks a random starting name and then selects every 50th name thereafter.",
+                        answer: "Systematic Sampling",
+                        explanation: "Starting at a random point and selecting at fixed intervals (every 50th) is systematic sampling."
+                    },
+                    {
+                        id: "q5_11",
+                        text: "A student polls her own roommates and close friends to estimate campus opinion on cafeteria food.",
+                        answer: "Convenience Sampling",
+                        explanation: "Relying on immediately accessible friends and roommates is convenience sampling."
+                    },
+                    {
+                        id: "q5_12",
+                        text: "A culinary magazine editor deliberately chooses 8 veteran chefs whom she considers industry pioneers to test new cookware.",
+                        answer: "Judgemental Sampling",
+                        explanation: "Selecting specific individuals based on expert judgment about their qualifications is judgemental sampling."
+                    },
+                    {
+                        id: "q5_13",
+                        text: "A city planner divides apartments by building floor (Low, Mid, High) and randomly selects 25 residents from each floor tier.",
+                        answer: "Stratified Sampling",
+                        explanation: "Dividing into strata by floor tier and sampling randomly from every tier is stratified sampling."
+                    },
+                    {
+                        id: "q5_14",
+                        text: "A forestry agency divides a national park into 80 square grid blocks, randomly selects 6 blocks, and counts every tree inside those 6 blocks.",
+                        answer: "Cluster Sampling",
+                        explanation: "Randomly picking geographic blocks (clusters) and surveying everything inside them is cluster sampling."
+                    }
+                ]
+            },
+            {
+                id: "q7",
+                number: "Question 7",
+                title: "Types of Survey Bias (5 Scenarios)",
+                instruction: "Click the type of bias illustrated in each scenario: Selection Bias, Response Bias, or Non-response Bias.",
+                type: "button-choice",
+                options: ["Selection Bias", "Response Bias", "Non-response Bias"],
+                items: [
+                    {
+                        id: "q7_1",
+                        text: "To gauge public support for a new city bike lane, a researcher surveys only members of a local cycling club.",
+                        answer: "Selection Bias",
+                        explanation: "The sampling frame excludes non-cyclists, systematically over-representing people who favor bike lanes."
+                    },
+                    {
+                        id: "q7_2",
+                        text: "A survey mails out 2,000 questionnaires about tax habits, but only 110 people mail them back, leaving 94.5% of the sample unrepresented.",
+                        answer: "Non-response Bias",
+                        explanation: "When a large portion of selected individuals fail or refuse to participate, non-response bias occurs."
+                    },
+                    {
+                        id: "q7_3",
+                        text: "A uniformed police officer asks high school students face-to-face: 'Have you ever driven above the speed limit?'",
+                        answer: "Response Bias",
+                        explanation: "Social desirability and authority pressure cause respondents to give untruthful or inaccurate answers."
+                    },
+                    {
+                        id: "q7_4",
+                        text: "A survey asks: 'Don't you agree that reckless corporate polluters should be heavily fined to save our planet?'",
+                        answer: "Response Bias",
+                        explanation: "Leading and emotionally loaded question wording nudges respondents toward a specific answer."
+                    },
+                    {
+                        id: "q7_5",
+                        text: "An online tech blog conducts a poll on smartphone ownership by posting a link exclusively on its website homepage.",
+                        answer: "Selection Bias",
+                        explanation: "Only tech-savvy readers visiting that specific blog have a chance to participate (undercoverage/self-selection)."
+                    },
+                    {
+                        id: "q7_6",
+                        text: "A gym conducts a member satisfaction phone survey, but 82% of selected members hang up immediately without answering.",
+                        answer: "Non-response Bias",
+                        explanation: "High refusal/hang-up rates leave the majority of the chosen sample unrepresented."
+                    },
+                    {
+                        id: "q7_7",
+                        text: "To estimate national average household wealth, a surveyor only samples visitors walking out of a luxury yacht show.",
+                        answer: "Selection Bias",
+                        explanation: "Sampling only wealthy yacht show attendees severely distorts representation of the general public."
+                    },
+                    {
+                        id: "q7_8",
+                        text: "During an in-person health interview, patients under-report their weekly fast-food consumption to avoid embarrassment.",
+                        answer: "Response Bias",
+                        explanation: "Embarrassment and social desirability lead respondents to provide inaccurate answers."
+                    }
+                ]
+            }
+        ];
+
+        /**
+         * Comprehensive Synthesis Questions (Questions 8, 9, and 10)
+         * Each case study includes a realistic research scenario and sample survey question,
+         * asking students to identify multiple concepts from Questions 1–7.
+         */
+        const synthesisData = [
+            {
+                id: "q8",
+                number: "Question 8 (Comprehensive Synthesis)",
+                title: "Case Study 1: Campus Sustainability & Commuting Survey",
+                scenario: `A university sustainability office wants to understand the commuting habits of all <strong>18,000 enrolled students</strong>. They divide the student database by academic faculty (Engineering, Arts, Business, Science) and randomly select <strong>100 students from each faculty</strong> (400 students total). However, they send the survey exclusively via a campus mobile app that only 35% of students have installed, and only 90 students reply. Based on those 90 replies, the office announces: <em>"62% of all university students commute by bicycle."</em>`,
+                sampleQuestion: `Sample Survey Question: "How many kilometers do you travel one-way to campus each day?" (Recorded to the nearest 0.1 km)`,
+                subQuestions: [
+                    {
+                        id: "q8_a",
+                        prompt: "1. What sampling method did the researchers attempt to use when dividing by faculty?",
+                        options: ["Cluster Sampling", "Stratified Sampling", "Systematic Sampling", "Convenience Sampling"],
+                        answer: "Stratified Sampling",
+                        explanation: "Dividing the population into distinct subgroups (faculties) and randomly sampling from each subgroup is Stratified Sampling."
+                    },
+                    {
+                        id: "q8_b",
+                        prompt: "2. The 18,000 enrolled students represent the ______, while the 62% figure is a ______.",
+                        options: ["Sample; Parameter", "Population; Statistic", "Population; Parameter", "Census; Statistic"],
+                        answer: "Population; Statistic",
+                        explanation: "All 18,000 students form the Population, while 62% is calculated from the sample replies, making it a Statistic."
+                    },
+                    {
+                        id: "q8_c",
+                        prompt: "3. Announcing that '62% of all university students commute by bicycle' based on the sample is an example of:",
+                        options: ["Descriptive Statistics", "Inferential Statistics"],
+                        answer: "Inferential Statistics",
+                        explanation: "Generalizing a sample finding to the entire university population is Inferential Statistics."
+                    },
+                    {
+                        id: "q8_d",
+                        prompt: "4. What variable type and level of measurement is 'distance in kilometers (nearest 0.1 km)'?",
+                        options: [
+                            "Discrete Quantitative & Interval",
+                            "Continuous Quantitative & Ratio",
+                            "Qualitative & Ordinal",
+                            "Continuous Quantitative & Interval"
+                        ],
+                        answer: "Continuous Quantitative & Ratio",
+                        explanation: "Distance is measured continuously and has a true zero (0 km = no travel), making it Ratio."
+                    },
+                    {
+                        id: "q8_e",
+                        prompt: "5. Sending the survey only through an app installed by 35% of students primarily introduces:",
+                        options: ["Selection Bias", "Response Bias"],
+                        answer: "Selection Bias",
+                        explanation: "Excluding the 65% of students who do not have the app creates undercoverage (Selection Bias)."
+                    }
+                ]
+            },
+            {
+                id: "q9",
+                number: "Question 9 (Comprehensive Synthesis)",
+                title: "Case Study 2: Hospital Patient Experience Audit",
+                scenario: `A regional hospital administrator wants to evaluate patient satisfaction across its <strong>40 inpatient wards</strong>. She randomly selects <strong>5 wards</strong> and interviews <strong>every single patient</strong> staying in those 5 wards during the week. During the interviews, the hospital's Chief Medical Officer personally stands next to the clipboard and asks patients to rate their care.`,
+                sampleQuestion: `Sample Survey Question: "Please rate your overall nursing care today: Poor, Fair, Good, Very Good, or Excellent."`,
+                subQuestions: [
+                    {
+                        id: "q9_a",
+                        prompt: "1. Randomly selecting 5 wards out of 40 and interviewing everyone inside those 5 wards is:",
+                        options: ["Stratified Sampling", "Cluster Sampling", "Simple Random Sampling", "Judgemental Sampling"],
+                        answer: "Cluster Sampling",
+                        explanation: "Each ward is an intact cluster; randomly choosing 5 clusters and surveying all members inside is Cluster Sampling."
+                    },
+                    {
+                        id: "q9_b",
+                        prompt: "2. What type of variable and level of measurement is the nursing care rating ('Poor' to 'Excellent')?",
+                        options: [
+                            "Qualitative & Nominal",
+                            "Qualitative & Ordinal",
+                            "Discrete Quantitative & Ordinal",
+                            "Continuous Quantitative & Interval"
+                        ],
+                        answer: "Qualitative & Ordinal",
+                        explanation: "Satisfaction labels are categorical (Qualitative) with a clear rank order (Ordinal)."
+                    },
+                    {
+                        id: "q9_c",
+                        prompt: "3. Having the Chief Medical Officer stand beside patients while they rate their care creates:",
+                        options: ["Selection Bias", "Non-response Bias", "Response Bias"],
+                        answer: "Response Bias",
+                        explanation: "Patients may feel intimidated or pressured to give overly positive ratings in front of the Chief Medical Officer."
+                    },
+                    {
+                        id: "q9_d",
+                        prompt: "4. If the administrator summarizes only the responses collected from those 5 wards in a pie chart without generalizing to other hospitals, she is using:",
+                        options: ["Descriptive Statistics", "Inferential Statistics"],
+                        answer: "Descriptive Statistics",
+                        explanation: "Organizing and summarizing the collected data itself in a chart is Descriptive Statistics."
+                    }
+                ]
+            },
+            {
+                id: "q10",
+                number: "Question 10 (Comprehensive Synthesis)",
+                title: "Case Study 3: Manufacturing & Workplace Temperature Study",
+                scenario: `A factory safety engineer inspects every single batch of <strong>10,000 microchips</strong> produced on Tuesday by picking a random starting microchip among the first 50 and then testing <strong>every 50th microchip</strong> down the assembly line (200 chips total). Alongside this, she records the ambient factory room temperature in degrees Celsius (°C) and mails a voluntary paper survey to all workers asking about safety violations—though 78% of workers throw the survey away without returning it.`,
+                sampleQuestion: `Sample Survey Question: "What was the ambient workstation temperature (°C) during your shift, and how many safety incidents did you observe?"`,
+                subQuestions: [
+                    {
+                        id: "q10_a",
+                        prompt: "1. Testing every 50th microchip after a random start is an example of:",
+                        options: ["Simple Random Sampling", "Systematic Sampling", "Cluster Sampling", "Judgemental Sampling"],
+                        answer: "Systematic Sampling",
+                        explanation: "Selecting every k-th item (every 50th) from an ordered production line is Systematic Sampling."
+                    },
+                    {
+                        id: "q10_b",
+                        prompt: "2. What is the level of measurement for 'ambient temperature in °C' and 'number of safety incidents' respectively?",
+                        options: [
+                            "Ratio and Interval",
+                            "Interval and Ratio",
+                            "Ordinal and Ratio",
+                            "Interval and Nominal"
+                        ],
+                        answer: "Interval and Ratio",
+                        explanation: "Temperature in °C is Interval (arbitrary zero), whereas count of incidents is Ratio (0 = zero incidents)."
+                    },
+                    {
+                        id: "q10_c",
+                        prompt: "3. When 78% of workers discard the safety survey without returning it, the study suffers heavily from:",
+                        options: ["Selection Bias", "Response Bias", "Non-response Bias"],
+                        answer: "Non-response Bias",
+                        explanation: "A 78% non-completion rate means those who didn't respond may differ significantly from those who did."
+                    },
+                    {
+                        id: "q10_d",
+                        prompt: "4. If the engineer had instead tested all 10,000 microchips produced on Tuesday, that procedure would be called a:",
+                        options: ["Parameter", "Statistic", "Census", "Sample"],
+                        answer: "Census",
+                        explanation: "Examining 100% of the items in the target population is a Census."
+                    }
+                ]
+            },
+            {
+                id: "q8_alt1",
+                number: "Question 8 (Comprehensive Synthesis)",
+                title: "Case Study 1: E-Commerce Checkout & Delivery Speed Study",
+                scenario: `An online retailer wants to evaluate delivery satisfaction among all <strong>50,000 customers</strong> who placed an order in March. They group customers by shipping region (North, South, East, West) and randomly select <strong>150 customers from each region</strong> (600 customers total). However, they only contact customers who opted into SMS alerts (40% of buyers), and only 120 reply. From those 120 replies, the marketing team claims: <em>"84% of all our customers are thrilled with our delivery speed."</em>`,
+                sampleQuestion: `Sample Survey Question: "How many hours elapsed between placing your order and package arrival?" (Measured to the nearest 0.5 hour)`,
+                subQuestions: [
+                    {
+                        id: "q8_alt1_a",
+                        prompt: "1. Grouping buyers by shipping region and randomly selecting 150 from each region is:",
+                        options: ["Cluster Sampling", "Stratified Sampling", "Systematic Sampling", "Convenience Sampling"],
+                        answer: "Stratified Sampling",
+                        explanation: "Dividing the population into geographic strata and sampling from each stratum is Stratified Sampling."
+                    },
+                    {
+                        id: "q8_alt1_b",
+                        prompt: "2. All 50,000 March customers represent the ______, whereas the 84% satisfaction rate is a ______.",
+                        options: ["Sample; Parameter", "Population; Statistic", "Population; Parameter", "Census; Statistic"],
+                        answer: "Population; Statistic",
+                        explanation: "All 50,000 customers form the Population, while 84% comes from the sample replies, making it a Statistic."
+                    },
+                    {
+                        id: "q8_alt1_c",
+                        prompt: "3. Claiming that '84% of all our customers are thrilled' based on 120 sample replies is an example of:",
+                        options: ["Descriptive Statistics", "Inferential Statistics"],
+                        answer: "Inferential Statistics",
+                        explanation: "Generalizing sample results to the entire customer base is Inferential Statistics."
+                    },
+                    {
+                        id: "q8_alt1_d",
+                        prompt: "4. What variable type and level of measurement is 'elapsed delivery time in hours'?",
+                        options: [
+                            "Discrete Quantitative & Interval",
+                            "Continuous Quantitative & Ratio",
+                            "Qualitative & Ordinal",
+                            "Continuous Quantitative & Interval"
+                        ],
+                        answer: "Continuous Quantitative & Ratio",
+                        explanation: "Elapsed time is measured continuously and has a true zero (0 hours), making it Ratio."
+                    },
+                    {
+                        id: "q8_alt1_e",
+                        prompt: "5. Contacting only customers who opted into SMS alerts (excluding the other 60%) introduces:",
+                        options: ["Selection Bias", "Response Bias"],
+                        answer: "Selection Bias",
+                        explanation: "Excluding 60% of the population from the sampling frame causes undercoverage (Selection Bias)."
+                    }
+                ]
+            },
+            {
+                id: "q9_alt1",
+                number: "Question 9 (Comprehensive Synthesis)",
+                title: "Case Study 2: Public Library Branch Renovation Survey",
+                scenario: `A city library director wants to assess visitor satisfaction across all <strong>30 neighborhood branches</strong>. She randomly picks <strong>4 branches</strong> and interviews <strong>every single visitor</strong> entering those 4 branches on Saturday. During the interview, the head librarian stands right beside the visitor holding a clipboard and asks them to rate the library staff's helpfulness.`,
+                sampleQuestion: `Sample Survey Question: "How helpful was the library staff today: Unhelpful, Somewhat Helpful, Helpful, or Extremely Helpful?"`,
+                subQuestions: [
+                    {
+                        id: "q9_alt1_a",
+                        prompt: "1. Randomly selecting 4 library branches out of 30 and interviewing every visitor inside those 4 branches is:",
+                        options: ["Stratified Sampling", "Cluster Sampling", "Simple Random Sampling", "Judgemental Sampling"],
+                        answer: "Cluster Sampling",
+                        explanation: "Each library branch is a natural cluster; sampling all visitors inside randomly chosen branches is Cluster Sampling."
+                    },
+                    {
+                        id: "q9_alt1_b",
+                        prompt: "2. What variable type and level of measurement is the helpfulness rating ('Unhelpful' to 'Extremely Helpful')?",
+                        options: [
+                            "Qualitative & Nominal",
+                            "Qualitative & Ordinal",
+                            "Discrete Quantitative & Ordinal",
+                            "Continuous Quantitative & Interval"
+                        ],
+                        answer: "Qualitative & Ordinal",
+                        explanation: "The ratings are ordered qualitative categories without equal numerical spacing (Ordinal)."
+                    },
+                    {
+                        id: "q9_alt1_c",
+                        prompt: "3. Having the head librarian stand beside visitors while they rate staff helpfulness creates:",
+                        options: ["Selection Bias", "Non-response Bias", "Response Bias"],
+                        answer: "Response Bias",
+                        explanation: "Visitors may feel pressured to inflate their ratings when the head librarian is watching."
+                    },
+                    {
+                        id: "q9_alt1_d",
+                        prompt: "4. If the director creates a bar chart summarizing only the ratings from those 4 branches without generalizing to other branches, she is using:",
+                        options: ["Descriptive Statistics", "Inferential Statistics"],
+                        answer: "Descriptive Statistics",
+                        explanation: "Summarizing the collected data in a bar chart without making broader inferences is Descriptive Statistics."
+                    }
+                ]
+            },
+            {
+                id: "q10_alt1",
+                number: "Question 10 (Comprehensive Synthesis)",
+                title: "Case Study 3: Solar Panel Quality & Output Inspection",
+                scenario: `A solar energy engineer inspects a production run of <strong>8,000 solar panels</strong> by choosing a random starting panel among the first 40 and testing <strong>every 40th panel</strong> down the assembly line (200 panels total). She also records the testing room temperature in degrees Celsius (°C) and emails an optional feedback form to all factory technicians—though 81% of technicians delete the email without replying.`,
+                sampleQuestion: `Sample Survey Question: "What was the testing room temperature (°C) during calibration, and how many surface scratches did you count?"`,
+                subQuestions: [
+                    {
+                        id: "q10_alt1_a",
+                        prompt: "1. Testing every 40th solar panel after a random starting point is:",
+                        options: ["Simple Random Sampling", "Systematic Sampling", "Cluster Sampling", "Judgemental Sampling"],
+                        answer: "Systematic Sampling",
+                        explanation: "Selecting every k-th item (every 40th) at fixed intervals is Systematic Sampling."
+                    },
+                    {
+                        id: "q10_alt1_b",
+                        prompt: "2. What is the level of measurement for 'room temperature in °C' and 'number of surface scratches' respectively?",
+                        options: [
+                            "Ratio and Interval",
+                            "Interval and Ratio",
+                            "Ordinal and Ratio",
+                            "Interval and Nominal"
+                        ],
+                        answer: "Interval and Ratio",
+                        explanation: "Celsius temperature is Interval (no true zero), whereas scratch count is Ratio (0 = zero scratches)."
+                    },
+                    {
+                        id: "q10_alt1_c",
+                        prompt: "3. When 81% of technicians delete the survey email without replying, the feedback suffers from:",
+                        options: ["Selection Bias", "Response Bias", "Non-response Bias"],
+                        answer: "Non-response Bias",
+                        explanation: "When the vast majority of invited respondents fail to reply, Non-response Bias occurs."
+                    },
+                    {
+                        id: "q10_alt1_d",
+                        prompt: "4. If the engineer had instead tested every single one of the 8,000 solar panels produced, that would be a:",
+                        options: ["Parameter", "Statistic", "Census", "Sample"],
+                        answer: "Census",
+                        explanation: "Inspecting 100% of the population is a Census."
+                    }
+                ]
+            }
+        ];
+
+        // Target scenario counts per section so every attempt draws a fresh randomized subset
+        const SECTION_QUOTAS = {
+            q1: 10,
+            q2: 5,
+            q3: 5,
+            q4: 10,
+            q5: 10,
+            q7: 5
+        };
+
+        // Application State
+        let activeSteps = [];
+        let userAnswers = {};
+        let currentStepIndex = 0;
+        let submittedSteps = {}; // Tracks { [stepIndex]: { score, total } }
+
+        /**
+         * Fisher-Yates shuffle helper (returns a new shuffled copy of an array)
+         */
+        function shuffleArray(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        /**
+         * Builds a randomized set of scenarios and shuffled answer choices for a new attempt
+         */
+        function buildRandomizedWorksheet() {
+            const steps = [];
+
+            // Randomize scenarios and option orders for Q1 - Q5, Q7
+            worksheetData.forEach((sec) => {
+                const quota = SECTION_QUOTAS[sec.id] || sec.items.length;
+                const pickedItems = shuffleArray(sec.items).slice(0, quota);
+                const shuffledOptions = sec.type === "dropdown" ? shuffleArray(sec.options) : [...sec.options];
+
+                steps.push({
+                    kind: "standard",
+                    data: {
+                        ...sec,
+                        options: shuffledOptions,
+                        items: pickedItems
+                    }
+                });
+            });
+
+            // Pick 1 randomized case study variant each for Question 8, Question 9, and Question 10
+            const q8Pool = synthesisData.filter((s) => s.id.startsWith("q8"));
+            const q9Pool = synthesisData.filter((s) => s.id.startsWith("q9"));
+            const q10Pool = synthesisData.filter((s) => s.id.startsWith("q10"));
+
+            [q8Pool, q9Pool, q10Pool].forEach((pool) => {
+                const chosen = pool[Math.floor(Math.random() * pool.length)];
+                const shuffledSubQs = chosen.subQuestions.map((sq) => ({
+                    ...sq,
+                    options: shuffleArray(sq.options)
+                }));
+                steps.push({
+                    kind: "synthesis",
+                    data: {
+                        ...chosen,
+                        subQuestions: shuffledSubQs
+                    }
+                });
+            });
+
+            return steps;
+        }
+
+        /**
+         * Helper to get active ordered list of all 9 randomized question sections
+         */
+        function getAllSteps() {
+            if (activeSteps.length === 0) {
+                activeSteps = buildRandomizedWorksheet();
+            }
+            return activeSteps;
+        }
+
+        /**
+         * Computes total possible items across the active randomized worksheet
+         */
+        function getTotalQuestionsCount() {
+            const steps = getAllSteps();
+            let total = 0;
+            steps.forEach((step) => {
+                total += step.kind === "standard"
+                    ? step.data.items.length
+                    : step.data.subQuestions.length;
+            });
+            return total;
+        }
+
+        /**
+         * Updates the top progress bar, step counter, and live score badge
+         */
+        function updateHeaderUI() {
+            const steps = getAllSteps();
+            const totalItems = getTotalQuestionsCount();
+            let currentScore = 0;
+            Object.values(submittedSteps).forEach((res) => {
+                currentScore += res.score;
+            });
+
+            document.getElementById("score-value").textContent = currentScore;
+            document.getElementById("total-value").textContent = totalItems;
+
+            const isFinalPage = currentStepIndex >= steps.length;
+            const progressLabel = document.getElementById("progress-label");
+            const progressBar = document.getElementById("progress-bar");
+
+            if (isFinalPage) {
+                progressLabel.textContent = "Completed — Final Summary";
+                progressBar.style.width = "100%";
+            } else {
+                const currentStep = steps[currentStepIndex].data;
+                progressLabel.textContent = `Step ${currentStepIndex + 1} of ${steps.length} (${currentStep.number})`;
+                const pct = Math.round(((currentStepIndex + 1) / steps.length) * 100);
+                progressBar.style.width = `${pct}%`;
+            }
+        }
+
+        /**
+         * Resets the worksheet back to Question 1 with newly randomized scenarios
+         */
+        function resetWorksheet() {
+            activeSteps = buildRandomizedWorksheet();
+            userAnswers = {};
+            submittedSteps = {};
+            currentStepIndex = 0;
+            renderCurrentStep();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        /**
+         * Records a dropdown selection for a scenario item
+         */
+        function selectDropdownAnswer(itemId, value) {
+            if (submittedSteps[currentStepIndex]) return;
+            if (value === "") {
+                delete userAnswers[itemId];
+            } else {
+                userAnswers[itemId] = value;
+            }
+        }
+
+        /**
+         * Records a button-choice selection and re-renders the current step
+         */
+        function selectChoiceAnswer(itemId, value) {
+            if (submittedSteps[currentStepIndex]) return;
+            userAnswers[itemId] = value;
+            renderCurrentStep();
+        }
+
+        /**
+         * Renders the currently active question step or the final score summary page
+         */
+        function renderCurrentStep() {
+            const steps = getAllSteps();
+            const wrapper = document.getElementById("sections-wrapper");
+            const stepControls = document.getElementById("step-controls");
+            const instructionBanner = document.getElementById("instruction-banner");
+            const finalSummaryPage = document.getElementById("final-summary-page");
+
+            updateHeaderUI();
+
+            // Show final summary page if all steps are completed
+            if (currentStepIndex >= steps.length) {
+                wrapper.classList.add("hidden");
+                stepControls.classList.add("hidden");
+                instructionBanner.classList.add("hidden");
+                finalSummaryPage.classList.remove("hidden");
+                renderFinalSummary();
+                return;
+            }
+
+            wrapper.classList.remove("hidden");
+            stepControls.classList.remove("hidden");
+            instructionBanner.classList.remove("hidden");
+            finalSummaryPage.classList.add("hidden");
+
+            const step = steps[currentStepIndex];
+            const isSubmitted = Boolean(submittedSteps[currentStepIndex]);
+
+            if (step.kind === "standard") {
+                const sec = step.data;
+                let itemsHtml = "";
+
+                sec.items.forEach((item, idx) => {
+                    const selected = userAnswers[item.id] || "";
+                    const isCorrect = isSubmitted && selected === item.answer;
+                    const isWrong = isSubmitted && selected !== item.answer;
+
+                    let cardBorder = "border-slate-200 bg-white";
+                    if (isCorrect) cardBorder = "border-emerald-300 bg-emerald-50/40";
+                    if (isWrong) cardBorder = "border-rose-300 bg-rose-50/40";
+
+                    let controlHtml = "";
+                    if (sec.type === "dropdown") {
+                        const optionsHtml = sec.options.map((opt) => {
+                            const selAttr = selected === opt ? "selected" : "";
+                            return `<option value="${opt}" ${selAttr}>${opt}</option>`;
+                        }).join("");
+
+                        controlHtml = `
+                            <select onchange="selectDropdownAnswer('${item.id}', this.value)"
+                                ${isSubmitted ? "disabled" : ""}
+                                class="w-full sm:w-64 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 text-sm font-medium shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100 disabled:text-slate-600 cursor-pointer">
+                                <option value="">-- Select Answer --</option>
+                                ${optionsHtml}
+                            </select>
+                        `;
+                    } else {
+                        const buttonsHtml = sec.options.map((opt) => {
+                            const isPicked = selected === opt;
+                            let btnClass = "border-slate-300 bg-white text-slate-700 hover:bg-slate-50";
+                            if (isPicked && !isSubmitted) {
+                                btnClass = "border-blue-600 bg-blue-600 text-white shadow-xs";
+                            } else if (isSubmitted && opt === item.answer) {
+                                btnClass = "border-emerald-600 bg-emerald-600 text-white";
+                            } else if (isSubmitted && isPicked && opt !== item.answer) {
+                                btnClass = "border-rose-600 bg-rose-600 text-white";
+                            }
+                            return `
+                                <button type="button"
+                                    onclick="selectChoiceAnswer('${item.id}', '${opt.replace(/'/g, "\\'")}')"
+                                    ${isSubmitted ? "disabled" : ""}
+                                    class="px-4 py-2 rounded-xl border text-xs sm:text-sm font-semibold transition cursor-pointer disabled:cursor-default ${btnClass}">
+                                    ${opt}
+                                </button>
+                            `;
+                        }).join("");
+
+                        controlHtml = `<div class="flex flex-wrap gap-2">${buttonsHtml}</div>`;
+                    }
+
+                    let feedbackHtml = "";
+                    if (isSubmitted) {
+                        if (isCorrect) {
+                            feedbackHtml = `
+                                <div class="mt-3 p-3 rounded-xl bg-emerald-100/80 border border-emerald-200 text-emerald-900 text-xs sm:text-sm">
+                                    <strong>&#10003; Correct!</strong> ${item.explanation}
+                                </div>
+                            `;
+                        } else {
+                            feedbackHtml = `
+                                <div class="mt-3 p-3 rounded-xl bg-rose-100/80 border border-rose-200 text-rose-900 text-xs sm:text-sm">
+                                    <strong>&#10007; Incorrect.</strong> Correct answer: <span class="font-bold underline">${item.answer}</span>.<br>
+                                    <span class="text-rose-800">${item.explanation}</span>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    itemsHtml += `
+                        <div class="p-4 sm:p-5 rounded-2xl border ${cardBorder} transition">
+                            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                                <div class="text-sm sm:text-base text-slate-800 leading-relaxed">
+                                    <span class="inline-block font-bold text-blue-600 mr-1.5">${idx + 1}.</span>
+                                    ${item.text}
+                                </div>
+                                <div class="shrink-0">${controlHtml}</div>
+                            </div>
+                            ${feedbackHtml}
+                        </div>
+                    `;
+                });
+
+                wrapper.innerHTML = `
+                    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="bg-slate-900 text-white px-5 py-4 sm:px-6">
+                            <div class="text-xs font-bold uppercase tracking-wider text-blue-300">${sec.number}</div>
+                            <h2 class="text-lg sm:text-xl font-bold mt-0.5">${sec.title}</h2>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-1">${sec.instruction}</p>
+                        </div>
+                        <div class="p-4 sm:p-6 space-y-3.5">
+                            ${itemsHtml}
+                        </div>
+                    </section>
+                `;
+            } else {
+                // Synthesis Case Study Step (Questions 8, 9, 10)
+                const syn = step.data;
+                let subQsHtml = "";
+
+                syn.subQuestions.forEach((sq) => {
+                    const selected = userAnswers[sq.id] || "";
+                    const isCorrect = isSubmitted && selected === sq.answer;
+                    const isWrong = isSubmitted && selected !== sq.answer;
+
+                    let cardBorder = "border-slate-200 bg-white";
+                    if (isCorrect) cardBorder = "border-emerald-300 bg-emerald-50/40";
+                    if (isWrong) cardBorder = "border-rose-300 bg-rose-50/40";
+
+                    const optionsHtml = sq.options.map((opt) => {
+                        const isPicked = selected === opt;
+                        let btnClass = "border-slate-300 bg-white text-slate-700 hover:bg-slate-50";
+                        if (isPicked && !isSubmitted) {
+                            btnClass = "border-blue-600 bg-blue-600 text-white shadow-xs";
+                        } else if (isSubmitted && opt === sq.answer) {
+                            btnClass = "border-emerald-600 bg-emerald-600 text-white";
+                        } else if (isSubmitted && isPicked && opt !== sq.answer) {
+                            btnClass = "border-rose-600 bg-rose-600 text-white";
+                        }
+                        return `
+                            <button type="button"
+                                onclick="selectChoiceAnswer('${sq.id}', '${opt.replace(/'/g, "\\'")}')"
+                                ${isSubmitted ? "disabled" : ""}
+                                class="px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-semibold text-left transition cursor-pointer disabled:cursor-default ${btnClass}">
+                                ${opt}
+                            </button>
+                        `;
+                    }).join("");
+
+                    let feedbackHtml = "";
+                    if (isSubmitted) {
+                        if (isCorrect) {
+                            feedbackHtml = `
+                                <div class="mt-3 p-3 rounded-xl bg-emerald-100/80 border border-emerald-200 text-emerald-900 text-xs sm:text-sm">
+                                    <strong>&#10003; Correct!</strong> ${sq.explanation}
+                                </div>
+                            `;
+                        } else {
+                            feedbackHtml = `
+                                <div class="mt-3 p-3 rounded-xl bg-rose-100/80 border border-rose-200 text-rose-900 text-xs sm:text-sm">
+                                    <strong>&#10007; Incorrect.</strong> Correct answer: <span class="font-bold underline">${sq.answer}</span>.<br>
+                                    <span class="text-rose-800">${sq.explanation}</span>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    subQsHtml += `
+                        <div class="p-4 sm:p-5 rounded-2xl border ${cardBorder} space-y-3">
+                            <p class="text-sm sm:text-base font-semibold text-slate-800">${sq.prompt}</p>
+                            <div class="flex flex-wrap gap-2">${optionsHtml}</div>
+                            ${feedbackHtml}
+                        </div>
+                    `;
+                });
+
+                wrapper.innerHTML = `
+                    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="bg-indigo-900 text-white px-5 py-4 sm:px-6">
+                            <div class="text-xs font-bold uppercase tracking-wider text-indigo-300">${syn.number}</div>
+                            <h2 class="text-lg sm:text-xl font-bold mt-0.5">${syn.title}</h2>
+                        </div>
+                        <div class="p-4 sm:p-6 space-y-5">
+                            <div class="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                                <div class="text-xs font-bold uppercase tracking-wider text-slate-500">Research Scenario</div>
+                                <p class="text-sm sm:text-base text-slate-800 leading-relaxed">${syn.scenario}</p>
+                                <div class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs sm:text-sm font-medium">
+                                    ${syn.sampleQuestion}
+                                </div>
+                            </div>
+                            <div class="space-y-3.5">
+                                ${subQsHtml}
+                            </div>
+                        </div>
+                    </section>
+                `;
+            }
+
+            // Update bottom control buttons & status text
+            const submitBtn = document.getElementById("submit-step-btn");
+            const nextBtn = document.getElementById("next-step-btn");
+            const statusText = document.getElementById("step-status-text");
+
+            if (isSubmitted) {
+                const res = submittedSteps[currentStepIndex];
+                submitBtn.classList.add("hidden");
+                nextBtn.classList.remove("hidden");
+                nextBtn.innerHTML = currentStepIndex === steps.length - 1
+                    ? "View Final Score &rarr;"
+                    : "Next Question &rarr;";
+                statusText.innerHTML = `Section Score: <strong class="text-slate-900">${res.score} / ${res.total}</strong>. Review any feedback above before continuing.`;
+            } else {
+                submitBtn.classList.remove("hidden");
+                nextBtn.classList.add("hidden");
+                statusText.textContent = "Answer all items above, then submit to check your work.";
+            }
+        }
+
+        /**
+         * Validates that all items in the current step are answered, grades them, and unlocks Next Question
+         */
+        function submitCurrentStep() {
+            const steps = getAllSteps();
+            const step = steps[currentStepIndex];
+            const items = step.kind === "standard" ? step.data.items : step.data.subQuestions;
+
+            // Check if any item is unanswered
+            const unansweredCount = items.filter((item) => !userAnswers[item.id]).length;
+            if (unansweredCount > 0) {
+                openModal(
+                    "Incomplete Question",
+                    `Please answer all items before submitting. You still have <strong>${unansweredCount}</strong> unanswered item(s) in this section.`
+                );
+                return;
+            }
+
+            let score = 0;
+            items.forEach((item) => {
+                if (userAnswers[item.id] === item.answer) {
+                    score++;
+                }
+            });
+
+            submittedSteps[currentStepIndex] = {
+                score,
+                total: items.length
+            };
+
+            renderCurrentStep();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        /**
+         * Advances to the next question step once the current step has been submitted
+         */
+        function goToNextStep() {
+            if (!submittedSteps[currentStepIndex]) return;
+            currentStepIndex++;
+            renderCurrentStep();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        /**
+         * Populates the Final Score Summary page with total score, percentage, and section breakdown
+         */
+        function renderFinalSummary() {
+            const steps = getAllSteps();
+            let totalEarned = 0;
+            let totalPossible = 0;
+
+            const breakdownHtml = steps.map((step, idx) => {
+                const res = submittedSteps[idx] || { score: 0, total: 0 };
+                totalEarned += res.score;
+                totalPossible += res.total;
+                const pct = res.total > 0 ? Math.round((res.score / res.total) * 100) : 0;
+                const badgeColor = pct === 100
+                    ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                    : pct >= 70
+                        ? "bg-blue-100 text-blue-800 border-blue-200"
+                        : "bg-amber-100 text-amber-800 border-amber-200";
+
+                return `
+                    <div class="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
+                        <div>
+                            <div class="text-xs font-bold uppercase text-slate-400">${step.data.number}</div>
+                            <div class="text-sm sm:text-base font-semibold text-slate-800">${step.data.title}</div>
+                        </div>
+                        <span class="px-3 py-1 rounded-full border text-xs sm:text-sm font-bold ${badgeColor}">
+                            ${res.score} / ${res.total} (${pct}%)
+                        </span>
+                    </div>
+                `;
+            }).join("");
+
+            const overallPct = totalPossible > 0 ? Math.round((totalEarned / totalPossible) * 100) : 0;
+            document.getElementById("final-score-fraction").textContent = `${totalEarned} / ${totalPossible}`;
+            document.getElementById("final-score-percent").textContent = `${overallPct}% Overall Score`;
+            document.getElementById("final-breakdown-list").innerHTML = breakdownHtml;
+
+            let msg = "Keep practicing! Review the definitions of sampling methods, levels of measurement, and survey biases, then try a fresh randomized set.";
+            if (overallPct >= 90) {
+                msg = "Outstanding mastery! You demonstrated strong command of statistical concepts, measurement levels, sampling techniques, and bias identification.";
+            } else if (overallPct >= 75) {
+                msg = "Great job! You have a solid grasp of core statistical principles. Try another randomized run to aim for 100%.";
+            }
+            document.getElementById("final-performance-msg").textContent = msg;
+        }
+
+        /**
+         * Modal Helpers
+         */
+        function openModal(title, htmlBody) {
+            document.getElementById("modal-title").textContent = title;
+            document.getElementById("modal-body").innerHTML = htmlBody;
+            const modal = document.getElementById("feedback-modal");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+
+        function closeModal() {
+            const modal = document.getElementById("feedback-modal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        function showToast(msg) {
+            openModal("Selection Tip", msg);
+        }
+
+        // Initialize on load
+        window.onload = function () {
+            renderCurrentStep();
+        };
+    </script>
+</body>
+</html>
